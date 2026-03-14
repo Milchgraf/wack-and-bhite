@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schwellwert · S/W Konverter</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0a0a0a;
+    --paper: #f2efe8;
+    --paper2: #e8e4db;
+    --accent: #c8b84a;
+    --mid: #666;
+    --radius: 2px;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 880px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 12px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.2rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  header span {
+    font-size: 0.7rem;
+    color: var(--mid);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 660px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--paper2);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--ink);
+    color: var(--mid);
+    background: var(--paper);
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    position: relative;
+  }
+
+  .canvas-wrap img,
+  .canvas-wrap canvas {
+    max-width: 100%;
+    max-height: 400px;
+    display: block;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .drop-zone {
+    width: 100%;
+    min-height: 260px;
+    border: 2px dashed rgba(0,0,0,0.2);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    gap: 10px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--ink);
+    background: rgba(0,0,0,0.04);
+  }
+
+  .drop-icon {
+    font-size: 2.4rem;
+    line-height: 1;
+    opacity: 0.35;
+  }
+
+  .drop-text {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  .drop-sub {
+    font-size: 0.62rem;
+    color: var(--mid);
+    opacity: 0.7;
+  }
+
+  input[type="file"] { display: none; }
+
+  /* Controls panel — full width */
+  .controls {
+    grid-column: 1 / -1;
+    background: var(--paper2);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .controls-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid);
+    white-space: nowrap;
+    min-width: 80px;
+  }
+
+  .slider-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+  }
+
+  .slider-track {
+    position: relative;
+    height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Gradient bar behind slider */
+  .slider-bg {
+    position: absolute;
+    left: 0; right: 0;
+    height: 8px;
+    border-radius: 0;
+    background: linear-gradient(to right, #000, #fff);
+    border: 1px solid rgba(0,0,0,0.25);
+    pointer-events: none;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    height: 32px;
+    margin: 0;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    cursor: grab;
+    transition: transform 0.1s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    cursor: grab;
+  }
+
+  .threshold-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    line-height: 1;
+    min-width: 72px;
+    text-align: right;
+    letter-spacing: 0.02em;
+  }
+
+  .slider-minmax {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.58rem;
+    color: var(--mid);
+    letter-spacing: 0.1em;
+    padding: 0 1px;
+  }
+
+  .histogram {
+    width: 100%;
+    height: 48px;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: var(--paper);
+    position: relative;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  button:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  button.primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  button.primary:hover {
+    background: #333;
+  }
+
+  button:disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .stats {
+    font-size: 0.62rem;
+    color: var(--mid);
+    letter-spacing: 0.08em;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .stats span b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .no-image-hint {
+    font-size: 0.65rem;
+    color: var(--mid);
+    letter-spacing: 0.1em;
+    text-align: center;
+    padding: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Schwellwert</h1>
+  <span>S/W Konverter · Threshold Binarizer</span>
+</header>
+
+<div id="app">
+  <div class="app">
+
+    <!-- Original -->
+    <div class="panel">
+      <div class="panel-label">Original</div>
+      <div class="canvas-wrap">
+        <div
+          v-if="!imageLoaded"
+          class="drop-zone"
+          :class="{ 'drag-over': isDragging }"
+          @click="triggerFileInput"
+          @dragover.prevent="isDragging = true"
+          @dragleave="isDragging = false"
+          @drop.prevent="onDrop"
+        >
+          <div class="drop-icon">⬡</div>
+          <div class="drop-text">Bild laden</div>
+          <div class="drop-sub">Klicken oder hierher ziehen</div>
+          <div class="drop-sub">JPG · PNG · WEBP · BMP</div>
+        </div>
+        <img v-else :src="originalSrc" ref="originalImg" />
+        <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" />
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="panel">
+      <div class="panel-label">Ergebnis · <span style="font-size:0.58rem">Threshold {{ threshold }}</span></div>
+      <div class="canvas-wrap">
+        <canvas v-if="imageLoaded" ref="outputCanvas"></canvas>
+        <div v-else class="no-image-hint">Kein Bild geladen</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+
+      <!-- Histogram -->
+      <canvas ref="histCanvas" class="histogram" width="800" height="48"></canvas>
+
+      <!-- Slider -->
+      <div class="controls-row">
+        <div class="controls-label">Schwellwert</div>
+        <div class="slider-wrap">
+          <div class="slider-track">
+            <div class="slider-bg"></div>
+            <input
+              type="range"
+              min="0" max="255"
+              v-model.number="threshold"
+              @input="applyThreshold"
+            />
+          </div>
+          <div class="slider-minmax">
+            <span>0 · Schwarz</span>
+            <span>Weiß · 255</span>
+          </div>
+        </div>
+        <div class="threshold-display">{{ threshold }}</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats" v-if="imageLoaded">
+        <span>Schwarz: <b>{{ blackPercent }}%</b></span>
+        <span>Weiß: <b>{{ whitePercent }}%</b></span>
+        <span>Pixel: <b>{{ totalPixels.toLocaleString('de-DE') }}</b></span>
+        <span>Auflösung: <b>{{ imgWidth }}×{{ imgHeight }}</b></span>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button @click="triggerFileInput">Bild wechseln</button>
+        <button class="primary" :disabled="!imageLoaded" @click="downloadResult">Speichern als PNG</button>
+        <button :disabled="!imageLoaded" @click="invertColors">Invertieren</button>
+        <button :disabled="!imageLoaded" @click="resetThreshold">Zurücksetzen</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, watch, onMounted, nextTick } = Vue;
+
+createApp({
+  setup() {
+    const fileInput = ref(null);
+    const originalImg = ref(null);
+    const outputCanvas = ref(null);
+    const histCanvas = ref(null);
+
+    const imageLoaded = ref(false);
+    const isDragging = ref(false);
+    const originalSrc = ref('');
+    const threshold = ref(128);
+    const inverted = ref(false);
+
+    const blackPercent = ref(0);
+    const whitePercent = ref(0);
+    const totalPixels = ref(0);
+    const imgWidth = ref(0);
+    const imgHeight = ref(0);
+
+    // Hidden canvas to read pixel data
+    let srcCanvas = null;
+    let srcCtx = null;
+    let pixelData = null;
+
+    function triggerFileInput() {
+      fileInput.value.click();
+    }
+
+    function onFileChange(e) {
+      const file = e.target.files[0];
+      if (file) loadFile(file);
+    }
+
+    function onDrop(e) {
+      isDragging.value = false;
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadFile(file);
+    }
+
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        originalSrc.value = e.target.result;
+        imageLoaded.value = true;
+        nextTick(() => {
+          const img = originalImg.value;
+          img.onload = () => {
+            imgWidth.value = img.naturalWidth;
+            imgHeight.value = img.naturalHeight;
+            srcCanvas = document.createElement('canvas');
+            srcCanvas.width = img.naturalWidth;
+            srcCanvas.height = img.naturalHeight;
+            srcCtx = srcCanvas.getContext('2d');
+            srcCtx.drawImage(img, 0, 0);
+            pixelData = srcCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+            totalPixels.value = img.naturalWidth * img.naturalHeight;
+            buildHistogram();
+            applyThreshold();
+          };
+          if (img.complete) img.onload();
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function getLuminance(r, g, b) {
+      // Perceptual luminance (BT.601)
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    // Histogram data array [0..255]
+    let histData = new Array(256).fill(0);
+
+    function buildHistogram() {
+      histData = new Array(256).fill(0);
+      const d = pixelData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const lum = Math.round(getLuminance(d[i], d[i+1], d[i+2]));
+        histData[lum]++;
+      }
+      drawHistogram();
+    }
+
+    function drawHistogram() {
+      const c = histCanvas.value;
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const w = c.width, h = c.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const max = Math.max(...histData);
+      const barW = w / 256;
+
+      for (let i = 0; i < 256; i++) {
+        const barH = (histData[i] / max) * (h - 2);
+        // Color bars relative to threshold
+        const t = threshold.value;
+        ctx.fillStyle = i < t ? '#0a0a0a' : '#d8d4cc';
+        ctx.fillRect(i * barW, h - barH, barW + 0.5, barH);
+      }
+
+      // Threshold line
+      const tx = (threshold.value / 255) * w;
+      ctx.strokeStyle = '#c8b84a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx, 0);
+      ctx.lineTo(tx, h);
+      ctx.stroke();
+    }
+
+    function applyThreshold() {
+      if (!pixelData || !outputCanvas.value) return;
+      const c = outputCanvas.value;
+      const img = originalImg.value;
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      const out = ctx.createImageData(img.naturalWidth, img.naturalHeight);
+      const src = pixelData.data;
+      const dst = out.data;
+      const t = threshold.value;
+      let blacks = 0;
+
+      for (let i = 0; i < src.length; i += 4) {
+        const lum = getLuminance(src[i], src[i+1], src[i+2]);
+        const val = lum < t ? (inverted.value ? 255 : 0) : (inverted.value ? 0 : 255);
+        dst[i] = dst[i+1] = dst[i+2] = val;
+        dst[i+3] = src[i+3]; // keep alpha
+        if (val === 0) blacks++;
+      }
+
+      ctx.putImageData(out, 0, 0);
+
+      // Stats
+      const total = totalPixels.value;
+      blackPercent.value = ((blacks / total) * 100).toFixed(1);
+      whitePercent.value = (((total - blacks) / total) * 100).toFixed(1);
+
+      // Redraw histogram with updated threshold position
+      drawHistogram();
+    }
+
+    function invertColors() {
+      inverted.value = !inverted.value;
+      applyThreshold();
+    }
+
+    function resetThreshold() {
+      threshold.value = 128;
+      inverted.value = false;
+      applyThreshold();
+    }
+
+    function downloadResult() {
+      const c = outputCanvas.value;
+      const link = document.createElement('a');
+      link.download = `schwellwert_${threshold.value}.png`;
+      link.href = c.toDataURL('image/png');
+      link.click();
+    }
+
+    return {
+      fileInput, originalImg, outputCanvas, histCanvas,
+      imageLoaded, isDragging, originalSrc,
+      threshold, blackPercent, whitePercent, totalPixels, imgWidth, imgHeight,
+      triggerFileInput, onFileChange, onDrop, applyThreshold,
+      invertColors, resetThreshold, downloadResult,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
