@@ -373,7 +373,7 @@
       <!-- Histogram -->
       <canvas ref="histCanvas" class="histogram" width="800" height="48"></canvas>
 
-      <!-- Slider -->
+      <!-- Threshold Slider -->
       <div class="controls-row">
         <div class="controls-label">Schwellwert</div>
         <div class="slider-wrap">
@@ -392,6 +392,27 @@
           </div>
         </div>
         <div class="threshold-display">{{ threshold }}</div>
+      </div>
+
+      <!-- Softness Slider -->
+      <div class="controls-row">
+        <div class="controls-label">Weichheit</div>
+        <div class="slider-wrap">
+          <div class="slider-track">
+            <div class="slider-bg" style="background: linear-gradient(to right, #555 0%, #555 40%, #aaa 100%);"></div>
+            <input
+              type="range"
+              min="0" max="128"
+              v-model.number="softness"
+              @input="applyThreshold"
+            />
+          </div>
+          <div class="slider-minmax">
+            <span>0 · Hart</span>
+            <span>Weich · 128</span>
+          </div>
+        </div>
+        <div class="threshold-display">{{ softness }}</div>
       </div>
 
       <!-- Stats -->
@@ -428,6 +449,7 @@ createApp({
     const isDragging = ref(false);
     const originalSrc = ref('');
     const threshold = ref(128);
+    const softness = ref(0);
     const inverted = ref(false);
 
     const blackPercent = ref(0);
@@ -509,23 +531,46 @@ createApp({
 
       const max = Math.max(...histData);
       const barW = w / 256;
+      const t = threshold.value;
+      const s = softness.value;
 
       for (let i = 0; i < 256; i++) {
         const barH = (histData[i] / max) * (h - 2);
-        // Color bars relative to threshold
-        const t = threshold.value;
-        ctx.fillStyle = i < t ? '#0a0a0a' : '#d8d4cc';
+        // Shade bars: black zone, transition zone, white zone
+        if (i < t - s) {
+          ctx.fillStyle = '#0a0a0a';
+        } else if (i > t + s) {
+          ctx.fillStyle = '#d8d4cc';
+        } else {
+          // transition zone — amber tint
+          ctx.fillStyle = '#c8b84a55';
+          // draw full bar height as background marker
+          ctx.fillRect(i * barW, 0, barW + 0.5, h);
+          ctx.fillStyle = '#888';
+        }
         ctx.fillRect(i * barW, h - barH, barW + 0.5, barH);
       }
 
-      // Threshold line
-      const tx = (threshold.value / 255) * w;
+      // Threshold center line
+      const tx = (t / 255) * w;
       ctx.strokeStyle = '#c8b84a';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(tx, 0);
       ctx.lineTo(tx, h);
       ctx.stroke();
+
+      // Softness boundary lines
+      if (s > 0) {
+        ctx.strokeStyle = 'rgba(200,184,74,0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        const lo = ((t - s) / 255) * w;
+        const hi = ((t + s) / 255) * w;
+        ctx.beginPath(); ctx.moveTo(lo, 0); ctx.lineTo(lo, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(hi, 0); ctx.lineTo(hi, h); ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
 
     function applyThreshold() {
@@ -539,24 +584,40 @@ createApp({
       const src = pixelData.data;
       const dst = out.data;
       const t = threshold.value;
+      const s = softness.value; // half-width of transition zone
       let blacks = 0;
 
       for (let i = 0; i < src.length; i += 4) {
         const lum = getLuminance(src[i], src[i+1], src[i+2]);
-        const val = lum < t ? (inverted.value ? 255 : 0) : (inverted.value ? 0 : 255);
+        let val;
+        if (s === 0) {
+          // Hard threshold
+          val = lum < t ? 0 : 255;
+        } else {
+          // Smooth S-curve within [t-s, t+s]
+          const lo = t - s, hi = t + s;
+          if (lum <= lo) {
+            val = 0;
+          } else if (lum >= hi) {
+            val = 255;
+          } else {
+            // Smoothstep
+            const x = (lum - lo) / (hi - lo); // 0..1
+            val = Math.round((x * x * (3 - 2 * x)) * 255);
+          }
+        }
+        if (inverted.value) val = 255 - val;
         dst[i] = dst[i+1] = dst[i+2] = val;
-        dst[i+3] = src[i+3]; // keep alpha
-        if (val === 0) blacks++;
+        dst[i+3] = src[i+3];
+        if (val < 128) blacks++;
       }
 
       ctx.putImageData(out, 0, 0);
 
-      // Stats
       const total = totalPixels.value;
       blackPercent.value = ((blacks / total) * 100).toFixed(1);
       whitePercent.value = (((total - blacks) / total) * 100).toFixed(1);
 
-      // Redraw histogram with updated threshold position
       drawHistogram();
     }
 
@@ -567,6 +628,7 @@ createApp({
 
     function resetThreshold() {
       threshold.value = 128;
+      softness.value = 0;
       inverted.value = false;
       applyThreshold();
     }
@@ -582,7 +644,7 @@ createApp({
     return {
       fileInput, originalImg, outputCanvas, histCanvas,
       imageLoaded, isDragging, originalSrc,
-      threshold, blackPercent, whitePercent, totalPixels, imgWidth, imgHeight,
+      threshold, softness, blackPercent, whitePercent, totalPixels, imgWidth, imgHeight,
       triggerFileInput, onFileChange, onDrop, applyThreshold,
       invertColors, resetThreshold, downloadResult,
     };
