@@ -467,7 +467,7 @@
     padding: 12px 28px;
     font-family: 'DM Mono', monospace;
     color: #fff;
-    font-size: 0.72rem;
+    font-size: clamp(0.65rem, 1.2vw, 0.85rem);
     letter-spacing: 0.12em;
     backdrop-filter: blur(8px);
     opacity: 1;
@@ -487,20 +487,6 @@
     gap: 4px;
   }
 
-  .hud-label {
-    font-size: 0.55rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.45);
-  }
-
-  .hud-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    line-height: 1;
-    color: #c8b84a;
-  }
-
   .hud-sep {
     width: 1px;
     height: 36px;
@@ -508,11 +494,25 @@
   }
 
   .hud-hint {
-    font-size: 0.55rem;
+    font-size: clamp(0.6rem, 1.2vw, 0.9rem);
     color: rgba(255,255,255,0.3);
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-align: center;
-    line-height: 1.6;
+    line-height: 1.8;
+  }
+
+  .hud-label {
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+
+  .hud-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    line-height: 1;
+    color: #c8b84a;
   }
 
   .fullscreen-close {
@@ -543,6 +543,9 @@
 <header>
   <h1>Schwellwert</h1>
   <span>S/W Konverter · Threshold Binarizer</span>
+  <div style="margin-left:auto">
+    <button id="lang-btn" onclick="toggleLang()" style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border:1.5px solid var(--ink);background:transparent;cursor:pointer;border-radius:2px;">DE / EN</button>
+  </div>
 </header>
 
 <div id="app">
@@ -550,7 +553,7 @@
 
     <!-- Original -->
     <div class="panel">
-      <div class="panel-label">Original</div>
+      <div class="panel-label">{{ t('original') }}</div>
       <div class="canvas-wrap">
         <div
           v-if="!imageLoaded"
@@ -562,8 +565,8 @@
           @drop.prevent="onDrop"
         >
           <div class="drop-icon">⬡</div>
-          <div class="drop-text">Bild laden</div>
-          <div class="drop-sub">Klicken oder hierher ziehen</div>
+          <div class="drop-text">{{ t('loadImage') }}</div>
+          <div class="drop-sub">{{ t('dropHint') }}</div>
           <div class="drop-sub">JPG · PNG · WEBP · BMP</div>
         </div>
         <img v-else :src="originalSrc" ref="originalImg" />
@@ -573,10 +576,10 @@
 
     <!-- Result -->
     <div class="panel">
-      <div class="panel-label">Ergebnis · <span style="font-size:0.58rem">Threshold {{ threshold }}</span></div>
+      <div class="panel-label">{{ t('result') }} · <span style="font-size:0.58rem">Threshold {{ threshold }}</span></div>
       <div class="canvas-wrap">
         <canvas v-if="imageLoaded" ref="outputCanvas"></canvas>
-        <div v-else class="no-image-hint">Kein Bild geladen</div>
+        <div v-else class="no-image-hint">{{ t('noImage') }}</div>
       </div>
     </div>
 
@@ -585,15 +588,15 @@
 
       <!-- Color Pickers -->
       <div class="color-row">
-        <div class="controls-label">Farben</div>
+        <div class="controls-label">{{ t('colors') }}</div>
         <div class="color-pair">
           <div class="color-picker-wrap">
-            <div class="color-picker-label">Dunkel</div>
+            <div class="color-picker-label">{{ t('dark') }}</div>
             <input type="color" v-model="colorDark" @input="applyThreshold" />
           </div>
           <div class="color-arrow">→</div>
           <div class="color-picker-wrap">
-            <div class="color-picker-label">Hell</div>
+            <div class="color-picker-label">{{ t('light') }}</div>
             <input type="color" v-model="colorLight" @input="applyThreshold" />
           </div>
         </div>
@@ -617,7 +620,7 @@
 
       <!-- Threshold Slider -->
       <div class="controls-row">
-        <div class="controls-label">Schwellwert</div>
+        <div class="controls-label">{{ t('threshold') }}</div>
         <div class="slider-wrap">
           <div class="slider-track">
             <div class="slider-bg"></div>
@@ -629,8 +632,8 @@
             />
           </div>
           <div class="slider-minmax">
-            <span>0 · Schwarz</span>
-            <span>Weiß · 255</span>
+            <span>0 · {{ t('dark') }}</span>
+            <span>{{ t('light') }} · 255</span>
           </div>
         </div>
         <div class="threshold-display">{{ threshold }}</div>
@@ -638,7 +641,7 @@
 
       <!-- Softness Slider -->
       <div class="controls-row">
-        <div class="controls-label">Weichheit</div>
+        <div class="controls-label">{{ t('softness') }}</div>
         <div class="slider-wrap">
           <div class="slider-track">
             <div class="slider-bg" style="background: linear-gradient(to right, #555 0%, #555 40%, #aaa 100%);"></div>
@@ -650,8 +653,8 @@
             />
           </div>
           <div class="slider-minmax">
-            <span>0 · Hart</span>
-            <span>Weich · 128</span>
+            <span>0 · {{ t('hard') }}</span>
+            <span>{{ t('soft') }} · 128</span>
           </div>
         </div>
         <div class="threshold-display">{{ softness }}</div>
@@ -659,19 +662,19 @@
 
       <!-- Stats -->
       <div class="stats" v-if="imageLoaded">
-        <span>Dunkel: <b>{{ darkPercent }}%</b></span>
-        <span>Hell: <b>{{ lightPercent }}%</b></span>
-        <span>Pixel: <b>{{ totalPixels.toLocaleString('de-DE') }}</b></span>
-        <span>Auflösung: <b>{{ imgWidth }}×{{ imgHeight }}</b></span>
+        <span>{{ t('dark') }}: <b>{{ darkPercent }}%</b></span>
+        <span>{{ t('light') }}: <b>{{ lightPercent }}%</b></span>
+        <span>{{ t('pixels') }}: <b>{{ totalPixels.toLocaleString('de-DE') }}</b></span>
+        <span>{{ t('resolution') }}: <b>{{ imgWidth }}×{{ imgHeight }}</b></span>
       </div>
 
       <!-- Actions -->
       <div class="actions">
-        <button @click="triggerFileInput">Bild wechseln</button>
-        <button class="primary" :disabled="!imageLoaded" @click="downloadResult">Speichern als PNG</button>
-        <button :disabled="!imageLoaded" @click="swapColors">Farben tauschen</button>
-        <button :disabled="!imageLoaded" @click="enterFullscreen">Vollbild</button>
-        <button :disabled="!imageLoaded" @click="resetThreshold">Zurücksetzen</button>
+        <button @click="triggerFileInput">{{ t('changeImage') }}</button>
+        <button class="primary" :disabled="!imageLoaded" @click="downloadResult">{{ t('savePng') }}</button>
+        <button :disabled="!imageLoaded" @click="swapColors">{{ t('swapColors') }}</button>
+        <button :disabled="!imageLoaded" @click="enterFullscreen" :title="t('fullscreenHint')">{{ t('fullscreen') }} <span style="opacity:0.45;font-size:0.8em">[F]</span></button>
+        <button :disabled="!imageLoaded" @click="resetThreshold">{{ t('reset') }}</button>
       </div>
 
     </div>
@@ -690,27 +693,28 @@
     >
       <canvas ref="fullCanvas" :style="canvasTransformStyle"></canvas>
     </div>
-    <button class="fullscreen-close" @click="exitFullscreen">ESC · Schließen</button>
+    <button class="fullscreen-close" @click="exitFullscreen">ESC · {{ t('close') }}</button>
     <div class="fullscreen-hud" :class="{ fade: hudFaded }">
       <div class="hud-item">
-        <div class="hud-label">Schwellwert</div>
+        <div class="hud-label">{{ t('threshold') }}</div>
         <div class="hud-value">{{ threshold }}</div>
       </div>
       <div class="hud-sep"></div>
       <div class="hud-item">
-        <div class="hud-label">Weichheit</div>
+        <div class="hud-label">{{ t('softness') }}</div>
         <div class="hud-value">{{ softness }}</div>
       </div>
       <div class="hud-sep"></div>
       <div class="hud-item">
-        <div class="hud-label">Zoom</div>
+        <div class="hud-label">{{ t('zoom') }}</div>
         <div class="hud-value">{{ Math.round(zoom * 100) }}%</div>
       </div>
       <div class="hud-sep"></div>
       <div class="hud-hint">
-        ← → &nbsp; Schwellwert ±1 &nbsp;·&nbsp; ↑ ↓ &nbsp; ±10<br>
-        Shift + ← → &nbsp; Weichheit ±1 &nbsp;·&nbsp; Shift + ↑ ↓ &nbsp; ±10<br>
-        Scroll · + / − &nbsp; Zoom &nbsp;·&nbsp; ESC · F &nbsp; Schließen
+        ← → &nbsp; {{ t('threshold') }} ±1 &nbsp;·&nbsp; ↑ ↓ &nbsp; ±10<br>
+        Shift + ← → &nbsp; {{ t('softness') }} ±1 &nbsp;·&nbsp; Shift + ↑ ↓ &nbsp; ±10<br>
+        Scroll · + / − &nbsp; {{ t('zoom') }} &nbsp;·&nbsp; 0 &nbsp; {{ t('resetZoom') }}<br>
+        ESC · F &nbsp; {{ t('close') }}
       </div>
     </div>
   </div>
@@ -741,6 +745,39 @@ createApp({
     const panX = ref(0);
     const panY = ref(0);
     const isPanning = ref(false);
+
+    // i18n
+    const lang = ref(navigator.language.startsWith('de') ? 'de' : 'en');
+    const i18n = {
+      de: {
+        original: 'Original', result: 'Ergebnis', loadImage: 'Bild laden',
+        dropHint: 'Klicken oder hierher ziehen', noImage: 'Kein Bild geladen',
+        colors: 'Farben', dark: 'Dunkel', light: 'Hell',
+        threshold: 'Schwellwert', softness: 'Weichheit',
+        hard: 'Hart', soft: 'Weich',
+        pixels: 'Pixel', resolution: 'Auflösung',
+        changeImage: 'Bild wechseln', savePng: 'Speichern als PNG',
+        swapColors: 'Farben tauschen', fullscreen: 'Vollbild',
+        fullscreenHint: 'Vollbild öffnen (Taste F)',
+        reset: 'Zurücksetzen', close: 'Schließen',
+        zoom: 'Zoom', resetZoom: 'Zoom zurücksetzen',
+      },
+      en: {
+        original: 'Original', result: 'Result', loadImage: 'Load image',
+        dropHint: 'Click or drop here', noImage: 'No image loaded',
+        colors: 'Colors', dark: 'Dark', light: 'Light',
+        threshold: 'Threshold', softness: 'Softness',
+        hard: 'Hard', soft: 'Soft',
+        pixels: 'Pixels', resolution: 'Resolution',
+        changeImage: 'Change image', savePng: 'Save as PNG',
+        swapColors: 'Swap colors', fullscreen: 'Fullscreen',
+        fullscreenHint: 'Open fullscreen (press F)',
+        reset: 'Reset', close: 'Close',
+        zoom: 'Zoom', resetZoom: 'Reset zoom',
+      },
+    };
+    function t(key) { return i18n[lang.value][key] ?? key; }
+    window._appLang = lang; // expose for the toggle button outside Vue
     let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0;
 
     const canvasTransformStyle = computed(() => ({
@@ -1132,12 +1169,19 @@ createApp({
       threshold, softness, colorDark, colorLight, presets,
       darkPercent, lightPercent, totalPixels, imgWidth, imgHeight,
       isFullscreen, hudFaded, zoom, isPanning, canvasTransformStyle,
+      lang, t,
       triggerFileInput, onFileChange, onDrop, applyThreshold,
       swapColors, applyPreset, resetThreshold, downloadResult,
       enterFullscreen, exitFullscreen, onWheel, onPanStart, onPanMove, onPanEnd,
     };
   }
 }).mount('#app');
+
+function toggleLang() {
+  if (window._appLang) {
+    window._appLang.value = window._appLang.value === 'de' ? 'en' : 'de';
+  }
+}
 </script>
 </body>
 </html>

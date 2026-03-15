@@ -10,6 +10,7 @@ A browser-based image tool that converts photos into two-color images using an a
 - **7 color presets** – B/W, Sepia, Cyanotype, Green, Red/Yellow, Night and more
 - **Live histogram** – shows pixel distribution with threshold and softness markers
 - **Fullscreen mode** – distraction-free view with zoom (scroll / `+`/`-`), pan (drag), fading HUD and full keyboard control
+- **i18n** – German and English UI, auto-detected from browser language, togglable via DE / EN button
 - **Drag & Drop** – just drop an image into the window
 - **PNG export** – save the result directly
 
