@@ -323,6 +323,204 @@
     text-align: center;
     padding: 20px;
   }
+
+  /* Color pickers */
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .color-pair {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .color-picker-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .color-picker-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid var(--ink);
+    border-radius: 0;
+    padding: 2px;
+    cursor: pointer;
+    background: none;
+  }
+
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; }
+
+  .color-arrow {
+    font-size: 1.1rem;
+    color: var(--mid);
+    flex-shrink: 0;
+    align-self: flex-end;
+    padding-bottom: 14px;
+  }
+
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .preset-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+    white-space: nowrap;
+  }
+
+  .preset-btn {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+    width: 44px;
+    height: 22px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    background: transparent;
+  }
+
+  .preset-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    color: inherit;
+  }
+
+  .preset-btn.active {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .preset-half {
+    flex: 1;
+    height: 100%;
+  }
+
+  /* Fullscreen overlay */
+  .fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: none;
+  }
+
+  .fullscreen-overlay canvas {
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
+    display: block;
+  }
+
+  .fullscreen-hud {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    background: rgba(0,0,0,0.72);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 12px 28px;
+    font-family: 'DM Mono', monospace;
+    color: #fff;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    backdrop-filter: blur(8px);
+    opacity: 1;
+    transition: opacity 0.6s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .fullscreen-hud.fade {
+    opacity: 0;
+  }
+
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .hud-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+
+  .hud-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #c8b84a;
+  }
+
+  .hud-sep {
+    width: 1px;
+    height: 36px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .hud-hint {
+    font-size: 0.55rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .fullscreen-close {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    pointer-events: all;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 8px;
+  }
+
+  .fullscreen-close:hover {
+    color: #fff;
+    background: none;
+  }
 </style>
 </head>
 <body>
@@ -369,6 +567,35 @@
 
     <!-- Controls -->
     <div class="controls">
+
+      <!-- Color Pickers -->
+      <div class="color-row">
+        <div class="controls-label">Farben</div>
+        <div class="color-pair">
+          <div class="color-picker-wrap">
+            <div class="color-picker-label">Dunkel</div>
+            <input type="color" v-model="colorDark" @input="applyThreshold" />
+          </div>
+          <div class="color-arrow">→</div>
+          <div class="color-picker-wrap">
+            <div class="color-picker-label">Hell</div>
+            <input type="color" v-model="colorLight" @input="applyThreshold" />
+          </div>
+        </div>
+        <div class="presets">
+          <span class="preset-label">Presets</span>
+          <button
+            v-for="p in presets" :key="p.name"
+            class="preset-btn"
+            :class="{ active: colorDark === p.dark && colorLight === p.light }"
+            :title="p.name"
+            @click="applyPreset(p)"
+          >
+            <div class="preset-half" :style="{ background: p.dark }"></div>
+            <div class="preset-half" :style="{ background: p.light }"></div>
+          </button>
+        </div>
+      </div>
 
       <!-- Histogram -->
       <canvas ref="histCanvas" class="histogram" width="800" height="48"></canvas>
@@ -417,8 +644,8 @@
 
       <!-- Stats -->
       <div class="stats" v-if="imageLoaded">
-        <span>Schwarz: <b>{{ blackPercent }}%</b></span>
-        <span>Weiß: <b>{{ whitePercent }}%</b></span>
+        <span>Dunkel: <b>{{ darkPercent }}%</b></span>
+        <span>Hell: <b>{{ lightPercent }}%</b></span>
         <span>Pixel: <b>{{ totalPixels.toLocaleString('de-DE') }}</b></span>
         <span>Auflösung: <b>{{ imgWidth }}×{{ imgHeight }}</b></span>
       </div>
@@ -427,16 +654,41 @@
       <div class="actions">
         <button @click="triggerFileInput">Bild wechseln</button>
         <button class="primary" :disabled="!imageLoaded" @click="downloadResult">Speichern als PNG</button>
-        <button :disabled="!imageLoaded" @click="invertColors">Invertieren</button>
+        <button :disabled="!imageLoaded" @click="swapColors">Farben tauschen</button>
+        <button :disabled="!imageLoaded" @click="enterFullscreen">Vollbild</button>
         <button :disabled="!imageLoaded" @click="resetThreshold">Zurücksetzen</button>
       </div>
 
     </div>
   </div>
+
+  <!-- Fullscreen overlay -->
+  <div v-if="isFullscreen" class="fullscreen-overlay" @click.self="exitFullscreen">
+    <canvas ref="fullCanvas"></canvas>
+    <button class="fullscreen-close" @click="exitFullscreen">ESC · Schließen</button>
+    <div class="fullscreen-hud" :class="{ fade: hudFaded }">
+      <div class="hud-item">
+        <div class="hud-label">Schwellwert</div>
+        <div class="hud-value">{{ threshold }}</div>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-item">
+        <div class="hud-label">Weichheit</div>
+        <div class="hud-value">{{ softness }}</div>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-hint">
+        ← → &nbsp; Schwellwert ±1 &nbsp;·&nbsp; ↑ ↓ &nbsp; ±10<br>
+        Shift + ← → &nbsp; Weichheit ±1 &nbsp;·&nbsp; Shift + ↑ ↓ &nbsp; ±10<br>
+        ESC · F &nbsp; Schließen
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-const { createApp, ref, watch, onMounted, nextTick } = Vue;
+const { createApp, ref, watch, onMounted, onUnmounted, nextTick } = Vue;
 
 createApp({
   setup() {
@@ -444,16 +696,30 @@ createApp({
     const originalImg = ref(null);
     const outputCanvas = ref(null);
     const histCanvas = ref(null);
+    const fullCanvas = ref(null);
 
     const imageLoaded = ref(false);
     const isDragging = ref(false);
     const originalSrc = ref('');
     const threshold = ref(128);
     const softness = ref(0);
-    const inverted = ref(false);
+    const colorDark = ref('#000000');
+    const colorLight = ref('#ffffff');
+    const isFullscreen = ref(false);
+    const hudFaded = ref(false);
 
-    const blackPercent = ref(0);
-    const whitePercent = ref(0);
+    const presets = [
+      { name: 'S/W',          dark: '#000000', light: '#ffffff' },
+      { name: 'W/S',          dark: '#ffffff', light: '#000000' },
+      { name: 'Sepia',        dark: '#2c1a0e', light: '#f5e6c8' },
+      { name: 'Cyanotypie',   dark: '#0d2b3e', light: '#d6eaf8' },
+      { name: 'Grün',         dark: '#0a1f0a', light: '#a8f0a0' },
+      { name: 'Rot/Gelb',     dark: '#8b0000', light: '#fff176' },
+      { name: 'Nacht',        dark: '#090915', light: '#e8e0ff' },
+    ];
+
+    const darkPercent = ref(0);
+    const lightPercent = ref(0);
     const totalPixels = ref(0);
     const imgWidth = ref(0);
     const imgHeight = ref(0);
@@ -536,22 +802,18 @@ createApp({
 
       for (let i = 0; i < 256; i++) {
         const barH = (histData[i] / max) * (h - 2);
-        // Shade bars: black zone, transition zone, white zone
         if (i < t - s) {
-          ctx.fillStyle = '#0a0a0a';
+          ctx.fillStyle = colorDark.value;
         } else if (i > t + s) {
-          ctx.fillStyle = '#d8d4cc';
+          ctx.fillStyle = colorLight.value;
         } else {
-          // transition zone — amber tint
-          ctx.fillStyle = '#c8b84a55';
-          // draw full bar height as background marker
+          ctx.fillStyle = '#c8b84a33';
           ctx.fillRect(i * barW, 0, barW + 0.5, h);
-          ctx.fillStyle = '#888';
+          ctx.fillStyle = '#999';
         }
         ctx.fillRect(i * barW, h - barH, barW + 0.5, barH);
       }
 
-      // Threshold center line
       const tx = (t / 255) * w;
       ctx.strokeStyle = '#c8b84a';
       ctx.lineWidth = 2;
@@ -560,7 +822,6 @@ createApp({
       ctx.lineTo(tx, h);
       ctx.stroke();
 
-      // Softness boundary lines
       if (s > 0) {
         ctx.strokeStyle = 'rgba(200,184,74,0.45)';
         ctx.lineWidth = 1;
@@ -571,6 +832,11 @@ createApp({
         ctx.beginPath(); ctx.moveTo(hi, 0); ctx.lineTo(hi, h); ctx.stroke();
         ctx.setLineDash([]);
       }
+    }
+
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
     }
 
     function applyThreshold() {
@@ -584,52 +850,59 @@ createApp({
       const src = pixelData.data;
       const dst = out.data;
       const t = threshold.value;
-      const s = softness.value; // half-width of transition zone
-      let blacks = 0;
+      const s = softness.value;
+      const [dr, dg, db] = hexToRgb(colorDark.value);
+      const [lr, lg, lb] = hexToRgb(colorLight.value);
+      let darks = 0;
 
       for (let i = 0; i < src.length; i += 4) {
         const lum = getLuminance(src[i], src[i+1], src[i+2]);
-        let val;
+        let mix; // 0 = dark color, 1 = light color
         if (s === 0) {
-          // Hard threshold
-          val = lum < t ? 0 : 255;
+          mix = lum < t ? 0 : 1;
         } else {
-          // Smooth S-curve within [t-s, t+s]
           const lo = t - s, hi = t + s;
-          if (lum <= lo) {
-            val = 0;
-          } else if (lum >= hi) {
-            val = 255;
-          } else {
-            // Smoothstep
-            const x = (lum - lo) / (hi - lo); // 0..1
-            val = Math.round((x * x * (3 - 2 * x)) * 255);
+          if (lum <= lo) mix = 0;
+          else if (lum >= hi) mix = 1;
+          else {
+            const x = (lum - lo) / (hi - lo);
+            mix = x * x * (3 - 2 * x); // smoothstep
           }
         }
-        if (inverted.value) val = 255 - val;
-        dst[i] = dst[i+1] = dst[i+2] = val;
+        dst[i]   = Math.round(dr + (lr - dr) * mix);
+        dst[i+1] = Math.round(dg + (lg - dg) * mix);
+        dst[i+2] = Math.round(db + (lb - db) * mix);
         dst[i+3] = src[i+3];
-        if (val < 128) blacks++;
+        if (mix < 0.5) darks++;
       }
 
       ctx.putImageData(out, 0, 0);
 
       const total = totalPixels.value;
-      blackPercent.value = ((blacks / total) * 100).toFixed(1);
-      whitePercent.value = (((total - blacks) / total) * 100).toFixed(1);
+      darkPercent.value = ((darks / total) * 100).toFixed(1);
+      lightPercent.value = (((total - darks) / total) * 100).toFixed(1);
 
       drawHistogram();
     }
 
-    function invertColors() {
-      inverted.value = !inverted.value;
+    function swapColors() {
+      const tmp = colorDark.value;
+      colorDark.value = colorLight.value;
+      colorLight.value = tmp;
+      applyThreshold();
+    }
+
+    function applyPreset(p) {
+      colorDark.value = p.dark;
+      colorLight.value = p.light;
       applyThreshold();
     }
 
     function resetThreshold() {
       threshold.value = 128;
       softness.value = 0;
-      inverted.value = false;
+      colorDark.value = '#000000';
+      colorLight.value = '#ffffff';
       applyThreshold();
     }
 
@@ -641,12 +914,112 @@ createApp({
       link.click();
     }
 
+    // --- Fullscreen ---
+    let hudTimer = null;
+
+    function showHud() {
+      hudFaded.value = false;
+      clearTimeout(hudTimer);
+      hudTimer = setTimeout(() => { hudFaded.value = true; }, 2200);
+    }
+
+    function renderFullCanvas() {
+      nextTick(() => {
+        const fc = fullCanvas.value;
+        const oc = outputCanvas.value;
+        if (!fc || !oc) return;
+        fc.width = oc.width;
+        fc.height = oc.height;
+        fc.getContext('2d').drawImage(oc, 0, 0);
+      });
+    }
+
+    function enterFullscreen() {
+      if (!imageLoaded.value) return;
+      isFullscreen.value = true;
+      renderFullCanvas();
+      showHud();
+      nextTick(() => {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      });
+    }
+
+    function exitFullscreen() {
+      isFullscreen.value = false;
+      clearTimeout(hudTimer);
+      if (document.fullscreenElement) document.exitFullscreen?.();
+    }
+
+    function onKeyDown(e) {
+      if (e.key === 'f' || e.key === 'F') {
+        if (isFullscreen.value) { exitFullscreen(); }
+        else if (imageLoaded.value) { enterFullscreen(); }
+        return;
+      }
+      if (!isFullscreen.value) return;
+      const isCtrl = e.ctrlKey || e.metaKey;
+      let handled = false;
+
+      if (e.key === 'Escape') {
+        exitFullscreen();
+        handled = true;
+      } else if (!isCtrl && !e.shiftKey && e.key === 'ArrowRight') {
+        threshold.value = Math.min(255, threshold.value + 1);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (!isCtrl && !e.shiftKey && e.key === 'ArrowLeft') {
+        threshold.value = Math.max(0, threshold.value - 1);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (!e.shiftKey && e.key === 'ArrowUp') {
+        threshold.value = Math.min(255, threshold.value + 10);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (!e.shiftKey && e.key === 'ArrowDown') {
+        threshold.value = Math.max(0, threshold.value - 10);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (e.shiftKey && e.key === 'ArrowUp') {
+        softness.value = Math.min(128, softness.value + 10);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (e.shiftKey && e.key === 'ArrowDown') {
+        softness.value = Math.max(0, softness.value - 10);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (e.shiftKey && e.key === 'ArrowRight') {
+        softness.value = Math.min(128, softness.value + 1);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      } else if (e.shiftKey && e.key === 'ArrowLeft') {
+        softness.value = Math.max(0, softness.value - 1);
+        applyThreshold(); renderFullCanvas(); showHud();
+        handled = true;
+      }
+
+      if (handled) e.preventDefault();
+    }
+
+    onMounted(() => {
+      window.addEventListener('keydown', onKeyDown);
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && isFullscreen.value) exitFullscreen();
+      });
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onKeyDown);
+    });
+
     return {
-      fileInput, originalImg, outputCanvas, histCanvas,
+      fileInput, originalImg, outputCanvas, histCanvas, fullCanvas,
       imageLoaded, isDragging, originalSrc,
-      threshold, softness, blackPercent, whitePercent, totalPixels, imgWidth, imgHeight,
+      threshold, softness, colorDark, colorLight, presets,
+      darkPercent, lightPercent, totalPixels, imgWidth, imgHeight,
+      isFullscreen, hudFaded,
       triggerFileInput, onFileChange, onDrop, applyThreshold,
-      invertColors, resetThreshold, downloadResult,
+      swapColors, applyPreset, resetThreshold, downloadResult,
+      enterFullscreen, exitFullscreen,
     };
   }
 }).mount('#app');
